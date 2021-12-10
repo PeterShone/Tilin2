@@ -93,6 +93,7 @@ class ML_Solver(BaseSolver):
         if not os.path.isdir(self.debugger.file_path(save_dir_root)):
             os.makedirs(self.debugger.file_path(save_dir_root))
 
+        scores = []
         for i, data_idx in enumerate(sample_data):
             # random choose a sample in data
             rand_data = f"data_{data_idx}.pkl"
@@ -110,8 +111,7 @@ class ML_Solver(BaseSolver):
             brick_layout.predict_order = predict_order
             brick_layout.predict_probs = self.predict(brick_layout)
 
-            brick_layout.show_predict(plotter, self.debugger, os.path.join(save_dir,
-                                                               f"greddy_predict_{score}.png"))
+            # brick_layout.show_predict(plotter, self.debugger, os.path.join(save_dir, f"greddy_predict_{score}.png"))
             write_bricklayout(self.debugger.file_path(save_dir), f"greedy_layout_{score}.pkl", brick_layout, with_features = False)
 
             ####### DEBUG FOR ASSERTION
@@ -120,10 +120,12 @@ class ML_Solver(BaseSolver):
             BrickLayout.assert_equal_layout(reloaded_bricklayout, brick_layout)
 
             # visualize the result by all thershold and all map
-            brick_layout.show_predict_prob(plotter, self.debugger, os.path.join(save_dir, f"network_prob_visualization.png"))
+            # brick_layout.show_predict_prob(plotter, self.debugger, os.path.join(save_dir, f"network_prob_visualization.png"))
+            # brick_layout.show_candidate_tiles(plotter, self.debugger, os.path.join(save_dir, f"superset.png"))
+            # brick_layout.show_super_contour(plotter, self.debugger, os.path.join(save_dir, f"super_contour.png"))
+            scores.append(score)
 
-            brick_layout.show_candidate_tiles(plotter, self.debugger, os.path.join(save_dir, f"superset.png"))
-            brick_layout.show_super_contour(plotter, self.debugger, os.path.join(save_dir, f"super_contour.png"))
+        return sum(scores) / len(scores)
 
 
     def load_saved_network(self, net_path):

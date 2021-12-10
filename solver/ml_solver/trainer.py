@@ -16,6 +16,7 @@ import traceback
 from graph_networks.network_utils import get_network_prediction
 from util.shape_processor import load_polygons
 from solver.ml_solver.losses import Losses
+from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -61,6 +62,8 @@ class Trainer():
         dataset_test = GraphDataset(root=self.testing_path)
         loader_test = DataLoader(dataset_test, batch_size=1, shuffle=True)
 
+        self.writer = SummaryWriter(log_dir='./tensorboard')
+
         print("Training Start!!!", flush=True)
         min_test_loss = float("inf")
         for i in range(training_epoch):
@@ -86,12 +89,28 @@ class Trainer():
                     print(traceback.format_exc())
                     continue
 
+                print(i)
+
             # self.network.train()
             torch.cuda.empty_cache()
-            loss_train, *_ = Losses.cal_avg_loss(self.network, loader_train)
+            with torch.no_grad:
+                loss_train, col_loss, area_loss, align_loss = Losses.cal_avg_loss(self.network, loader_train)
             print(f"epoch {i}: training loss: {loss_train}", flush=True)
-            loss_test, avg_collision_probs, avg_filled_area, avg_align_length  = Losses.cal_avg_loss(self.network, loader_test)
+            print(f"epoch {i}: col loss: {col_loss}", flush=True)
+            print(f"epoch {i}: area loss: {area_loss}", flush=True)
+            print(f"epoch {i}: align loss: {align_loss}", flush=True)
+            self.writer.add_scalar("Loss/train", loss_train, i)
+            self.writer.add_scalar("col_loss/train", col_loss, i)
+            self.writer.add_scalar("area_loss/train", area_loss, i)
+            self.writer.add_scalar("align_loss/train", align_loss, i)
+
+            with torch.no_grad:
+                loss_test, avg_collision_probs, avg_filled_area, avg_align_length  = Losses.cal_avg_loss(self.network, loader_test)
             print(f"epoch {i}: testing loss: {loss_test}", flush=True)
+            self.writer.add_scalar("Loss/test", loss_test, i)
+            self.writer.add_scalar("avg_collision_probs/test", avg_collision_probs, i)
+            self.writer.add_scalar("avg_filled_area/test", avg_filled_area, i)
+            self.writer.add_scalar("avg_align_length/test", avg_align_length, i)
 
 
             ############# result debugging #############
@@ -115,10 +134,17 @@ class Trainer():
                 test_sample_data = np.random.randint(low=0,  high=len(dataset_test),  size=config.debug_data_num)
 
                 ###### evaluate with training mode
-                ml_solver.save_debug_info(self.plotter, train_sample_data, os.path.join(self.training_path, "raw"),
+                print('Testing begins:')
+                score_train = ml_solver.save_debug_info(self.plotter, train_sample_data, os.path.join(self.training_path, "raw"),
                                           os.path.join("result", os.path.join(f"epoch_{i}", 'training')))
-                ml_solver.save_debug_info(self.plotter, test_sample_data, os.path.join(self.testing_path, "raw"),
+                print(f"epoch {i}: training score: {score_train}")  
+                self.writer.add_scalar("Score/train", score_train, i)
+
+                score_test = ml_solver.save_debug_info(self.plotter, test_sample_data, os.path.join(self.testing_path, "raw"),
                                           os.path.join("result", os.path.join(f"epoch_{i}", 'testing')))
+                print(f"epoch {i}: testing score: {score_test}") 
+                print() 
+                self.writer.add_scalar("Score/test", score_test, i)
                 torch.cuda.empty_cache()
 
         print("Training Done!!!")

@@ -19,6 +19,9 @@ class GraphDataset(Dataset):
     @property
     def processed_file_names(self):
         return ['data_{}.pt'.format(i) for i in range(len(self.raw_file_names))]
+    
+    def len(self):
+        return len(self)
 
     def __len__(self):
         return len(self.processed_file_names)
