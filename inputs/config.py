@@ -29,7 +29,7 @@ environment = Environment(env_location, symmetry_tiles=symmetry_tiles)
 # SET YOUR DATASET PATH HERE
 # dataset_path = os.path.join('./dataset', f"{env_name}-ring{complete_graph_size}-{number_of_data}")
 # dataset_path = '/research/dept8/fyp21/cwf2101/data/30-60-90+equilateral-ring15-2000'
-dataset_path = '/research/dept8/fyp21/cwf2101/data/L3+long_tile-ring10-2000'
+dataset_path = '/research/dept8/fyp21/cwf2101/peter/gen/L3+long_tile-ring10-2000'
 
 ################### CREATING DATA ###################
 shape_size_lower_bound=0.4
